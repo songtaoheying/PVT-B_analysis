@@ -30,7 +30,7 @@ else:
     df['Standardized OPS'] = (df['OPS'] - ops_mean) / ops_std
 
 # 7. 选择需要的列输出
-result = df[['id', 'Average RT (ms)', 'OPS', 'Standardized OPS']]
+result = df[['id', 'Test End Time', 'Average RT (ms)', 'OPS', 'Standardized OPS']]
 
 # 8. 保存为 result.csv，保留合适的浮点精度
 result.to_csv('result.csv', index=False, float_format='%.6f')
