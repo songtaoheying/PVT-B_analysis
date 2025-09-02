@@ -4,6 +4,7 @@
   v0.1 - works for me, shared for learning.
   Feel free to use/modify. - @AshXiong, 2025
 -->
+
 <head>
     <meta charset="UTF-8">
     <title>PVT-B Task</title>
@@ -93,7 +94,7 @@
     </style>
 </head>
 
-
+<!-- 当取消<body class="debug">注释并将body注释时进入测试模式 -->
 <!-- <body class="debug"> -->
 
 <body>
@@ -122,6 +123,68 @@
         </label>
         <br><br>
         <button id="consent-button" disabled>Start Experiment</button>
+
+
+
+        <div id="references"
+            style="max-width: 800px; margin: 50px auto; padding: 20px; font-size: 14px; border-top: 1px solid #444;">
+            <h3>References</h3>
+            <ul style="text-align: left;">
+                <li>Basner, M., Mollicone, D., & Dinges, D. F. (2011). Validity and sensitivity of a brief Psychomotor
+                    Vigilance
+                    Test (PVT-B) to total and partial sleep deprivation. <em>Acta Astronautica, 69</em>(9-10), 949–959.
+                    https://doi.org/10.1016/j.actaastro.2011.07.015</li>
+                <li>Dinges, D. F., & Powell, J. W. (1985). Microcomputer analyses of performance on a portable, simple
+                    visual RT
+                    task during sustained operations. <em>Behavior Research Methods, Instruments, & Computers,
+                        17</em>(6),
+                    652–655.
+                </li>
+                <li>Wilkinson, R. T., & Houghton, D. (1982). Field test of arousal: A portable reaction timer with data
+                    storage.
+                    <em>Human Factors, 24</em>(4), 487–493. https://doi.org/10.1177/001872088202400409
+                </li>
+            </ul>
+
+            <h3>Data Output Format</h3>
+            <table border="1" style="width: 100%; border-collapse: collapse; text-align: left;">
+                <tr>
+                    <th>Column</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>Test End Time</td>
+                    <td>Date and time when the test was completed</td>
+                </tr>
+                <tr>
+                    <td>Average RT (ms)</td>
+                    <td>Average reaction time for correct responses</td>
+                </tr>
+                <tr>
+                    <td>Total Trials</td>
+                    <td>Total number of trials attempted</td>
+                </tr>
+                <tr>
+                    <td>Lapses (>500ms)</td>
+                    <td>Number of responses slower than 500ms</td>
+                </tr>
+                <tr>
+                    <td>Commissions (too early)</td>
+                    <td>Number of premature responses</td>
+                </tr>
+            </table>
+
+            <footer style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #444;">
+                <p>This implementation is inspired by the <a
+                        href="https://www.psytoolkit.org/experiment-library/pvtb.html" target="_blank"
+                        style="color: #88f;">PsyToolkit PVT-B demo</a>.<br>
+                    Code adapted for educational/research use under open-access principles.</p>
+            </footer>
+
+        </div>
+
+
+
     </div>
     <div id="screen" style="display: none;">
         <!-- 替换原有的 #instructions 内容 -->
@@ -131,7 +194,8 @@
             <p>As soon as you see the number, press the <strong>SPACE</strong> key as quickly as possible.</p>
             <p>Do not press the spacebar when no number is shown — this counts as an error.</p>
             <p>The test lasts 3 minutes. Try to stay focused throughout.</p>
-            <p>Press <strong>SPACE</strong> to start the task. Try to stay focused, as your performance reflects your current level of alertness.</p>
+            <p>Press <strong>SPACE</strong> to start the task. Try to stay focused, as your performance reflects your
+                current level of alertness.</p>
         </div>
         <div id="task" style="display:none;">
             <div id="stimulus-container">
@@ -143,60 +207,6 @@
     <div id="debug-stats" style="position: absolute; top: 20px; left: 20px; font-size: 20px; color: lime;">
         Commissions: <span id="commissions-count">0</span><br>
         Lapses: <span id="lapses-count">0</span>
-    </div>
-    <!-- 在 </body> 标签前添加 -->
-    <div id="references"
-        style="max-width: 800px; margin: 50px auto; padding: 20px; font-size: 14px; border-top: 1px solid #444;">
-        <h3>References</h3>
-        <ul style="text-align: left;">
-            <li>Basner, M., Mollicone, D., & Dinges, D. F. (2011). Validity and sensitivity of a brief Psychomotor
-                Vigilance
-                Test (PVT-B) to total and partial sleep deprivation. <em>Acta Astronautica, 69</em>(9-10), 949–959.
-                https://doi.org/10.1016/j.actaastro.2011.07.015</li>
-            <li>Dinges, D. F., & Powell, J. W. (1985). Microcomputer analyses of performance on a portable, simple
-                visual RT
-                task during sustained operations. <em>Behavior Research Methods, Instruments, & Computers, 17</em>(6),
-                652–655.
-            </li>
-            <li>Wilkinson, R. T., & Houghton, D. (1982). Field test of arousal: A portable reaction timer with data
-                storage.
-                <em>Human Factors, 24</em>(4), 487–493. https://doi.org/10.1177/001872088202400409
-            </li>
-        </ul>
-
-        <h3>Data Output Format</h3>
-        <table border="1" style="width: 100%; border-collapse: collapse; text-align: left;">
-            <tr>
-                <th>Column</th>
-                <th>Description</th>
-            </tr>
-            <tr>
-                <td>Test End Time</td>
-                <td>Date and time when the test was completed</td>
-            </tr>
-            <tr>
-                <td>Average RT (ms)</td>
-                <td>Average reaction time for correct responses</td>
-            </tr>
-            <tr>
-                <td>Total Trials</td>
-                <td>Total number of trials attempted</td>
-            </tr>
-            <tr>
-                <td>Lapses (>500ms)</td>
-                <td>Number of responses slower than 500ms</td>
-            </tr>
-            <tr>
-                <td>Commissions (too early)</td>
-                <td>Number of premature responses</td>
-            </tr>
-        </table>
-
-        <footer style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #444;">
-            <p>This implementation is inspired by the <a href="https://www.psytoolkit.org/experiment-library/pvtb.html"
-                    target="_blank" style="color: #88f;">PsyToolkit PVT-B demo</a>.<br>
-                Code adapted for educational/research use under open-access principles.</p>
-        </footer>
     </div>
 
     <script>
