@@ -1,60 +1,123 @@
-# 🧠 简明心理运动警觉性测试（PVT-B）网页版
 
-一个轻量、开源的 [PVT-B](https://doi.org/10.1016/j.actaastro.2011.07.015) 实现，用于测量注意力、反应时间和疲劳程度。基于 Dinges 实验范式，适用于睡眠研究、认知评估和教育用途。
 
-🌐 **在线体验**:https://songtaoheying.github.io/PVT-B_analysis/
+# 简明心理运动警觉性测试（PVT-B）及数据简单分析
 
-📥 **源码开源**: [GitHub](https://github.com/songtaoheying/PVT-B_analysis) (MIT 许可)
+> 一个轻量、开源的 3 分钟注意力测试，基于 NASA 航天员研究范式。
 
----
-
-## 🔍 什么是 PVT-B？
-
-PVT-B（Brief Psychomotor Vigilance Test）是一种 **3分钟持续注意力测试**，广泛用于：
-- 睡眠剥夺研究
-- 疲劳监测（如司机、医生、飞行员）
-- 航天员认知表现评估（NASA 使用）
-- 心理学教学实验
-
-参与者需在黄色数字出现时**尽快按下空格键**，避免提前按键或反应过慢。
+ **在线体验**: https://songtaoheying.github.io/PVT-B_analysis/  
+ **源码开源**: [GitHub](https://github.com/songtaoheying/PVT-B_analysis) (MIT License)
 
 ---
 
-## 📊 测试结束后输出数据：
+## 什么是 PVT-B？
+
+PVT-B 是一种测量**持续注意力和警觉性**的标准化测试，用于：
+
+*   睡眠与疲劳研究
+*   高风险职业监测（如司机、医生）
+*   心理学教学与认知评估
+
+参与者需在黄色数字出现时**尽快按下空格键**。
+
+
+---
+## 测试后生成的数据
+
+测试结束后，系统会生成以下数据，可用于分析：
 
 | 指标 | 说明 |
-|------|------|
-| Test End Time | 完成时间 |
-| Average RT (ms) | 正确反应的平均反应时间 |
-| Total Trials | 总试验次数 |
-| Lapses (>500ms) | 反应超过 500ms 的次数 |
-| Commissions (too early) | 提前按键（<100ms）次数 |
+| :--- | :--- |
+| **Test End Time** | 测试完成的日期和时间 |
+| **Average RT (ms)** | 正确反应的平均时间（毫秒），反映处理速度 |
+| **Total Trials** | 总试验次数（通常 ~60 次） |
+| **Lapses (>500ms)** | 反应过慢 (>500ms) 的次数，反映注意力涣散 |
+| **Commissions (too early)** | 抢答 (<100ms) 的次数，反映冲动性 |
 
-点击“Copy Data”可复制为 CSV，粘贴到 Excel 或 SPSS 分析。
+点击“Copy Data”按钮，可将以上数据复制为 CSV 格式，方便粘贴到 Excel、SPSS 或 Python 中进行进一步分析。
+
+---
+
+## 📊 数据分析核心指标：OPS
+
+> **反应时间 (RT)** 也是一个重要参数，综合 OPS 与 RT 能更全面地评估认知状态。
+
+本项目的核心指标是 **OPS (Overall Performance Score, 整体表现得分)**。
+
+**为什么是 OPS？**
+根据 NASA 对航天员的研究 (Tu et al., 2022)，**测试前的平均 OPS 是预测未来疲劳和表现衰退的最重要指标之一**。**OPS 越高，代表基础警觉性越好，越能抵抗疲劳影响**。
+
+### OPS 公式
+
+$$
+\text{OPS} = 1 - \frac{\text{Lapses (>500ms)} + \text{Commissions (too early)}}{\text{Total Trials}}
+$$
+
+*   **Lapses**: 反应过慢 (>500ms) 的次数
+*   **Commissions**: 抢答 (<100ms) 的次数
+*   **Total Trials**: 总试验次数
+
+**解读**：值越接近 **1** 表现越好。
+
+---
+
+## 📈 标准化 OPS：追踪个体变化
+
+直接比较不同时间的 OPS 值可能不明显。建议使用 **标准化 OPS**（Z-score）来清晰展示个体表现趋势。
+
+$$
+\text{标准化 OPS} = \frac{\text{个人 OPS} - \text{群体 OPS 均值}}{\text{群体 OPS 标准差}}
+$$
+
+*   **> 0**: 好于平均水平
+*   **< 0**: 差于平均水平
+*   负值越大，提示疲劳或注意力下降越明显。
+
+
+
+
+---
+## 如何本地体验测试
+
+- 下载文件：
+在本项目的 GitHub 页面，点击绿色的 Code 按钮，选择 Download ZIP。
+下载完成后，解压缩文件夹。
+- 找到主文件：
+打开解压后的文件夹，找到名为 index.html 的文件。
+- 直接运行：
+双击 index.html 文件。
+它会自动在您的默认浏览器（如 Chrome, Edge, Safari）中打开。
+无需安装任何软件，无需联网，即可开始测试！
+## 如何本地分析数据
+打开python环境,将多次测试的数据复制到raw_data.csv中,运行脚本clean_data.py,再运行process_.py,生成result.csv,通过excel可视化展现
+
+
+
+---
+
+## 灵感来源
+
+
+本项目设计灵感来源于 [PsyToolkit ](https://www.psytoolkit.org/experiment-library/pvtb.html)的 PVT-B 演示，并结合 NASA 航天员研究进行优化。
+为了方便本地运行和数据分析,开发为html单文件测试
+所有代码均为原创
+
 
 ---
 
 ## 📚 参考文献
 
-- Basner, M., Mollicone, D., & Dinges, D. F. (2011). [Validity and sensitivity of a brief PVT-B](https://doi.org/10.1016/j.actaastro.2011.07.015)
-- Dinges, D. F., & Powell, J. W. (1985). Microcomputer analyses of performance...
-- Wilkinson, R. T., & Houghton, D. (1982). [Field test of arousal](https://doi.org/10.1177/001872088202400409)
-
-灵感来自 [PsyToolkit PVT-B demo](https://www.psytoolkit.org/experiment-library/pvtb.html)
+*   **Tu, D. et al. (2022)**. Dynamic ensemble prediction of cognitive performance in spaceflight. *Scientific Reports*.
+*   Basner, M. et al. (2011). Validity and sensitivity of a brief Psychomotor Vigilance Test (PVT-B). *Acta Astronautica*.
 
 ---
 
-## 🛠️ 如何使用？
+## 隐私说明
 
-1. 直接打开 [在线链接](https://你的用户名.github.io/pvtb-web)
-2. 或下载 `index.html` 本地运行（双击即可）
-3. 用于研究时请添加知情同意流程
-
-> ⚠️ 数据仅在浏览器中处理，不会上传服务器。
+所有数据**仅在您的浏览器中处理,不会上传**
 
 ---
 
-## 📄 许可证：MIT
+## 许可证：MIT
 
-你可以自由使用、修改、分发本项目，用于科研或教学。  
-请引用原始研究作者和本项目链接。
+欢迎用于科研、教学、自由使用与修改。
+请引用本项目链接。
