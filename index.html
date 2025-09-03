@@ -151,7 +151,8 @@
     <div id="instructions">
       <p>当黄色数字出现时，请尽快按<strong>空格键</strong>、<strong>点击</strong>或<strong>触摸</strong>屏幕。</p>
       <p>不要在数字出现之前按键。</p>
-      <p>按<strong>空格键</strong>、<strong>点击</strong>或<strong>触摸</strong>开始任务</p>
+      <p>点击空格或按钮开始测试</p>
+      <button id="startButton">开始任务</button>
     </div>
     <div id="task" style="display:none;">
       <div id="stimulus-container">
@@ -190,6 +191,11 @@
     // 获取红色边框元素
     const stimulusFrameEl = document.getElementById("stimulus-container");
 
+    // 统一通过按钮开始任务
+    startButton.addEventListener("click", function () {
+      startTask();
+    });
+
     document.addEventListener("keydown", function (e) {
       if (e.code === "Space" && instructionsEl.style.display !== "none") {
         e.preventDefault(); // 防止页面滚动
@@ -204,19 +210,11 @@
     });
     // 修改触屏事件处理
     document.addEventListener("touchstart", function (e) {
-      e.preventDefault(); // 添加这行来阻止默认行为
-      e.stopPropagation();    // 阻止事件冒泡
 
       // 标记触摸事件已被处理
       touchHandled = true;
 
-      // 检查是否在初始界面，模拟开始任务的空格键
-      if (instructionsEl.style.display !== "none") {
-        startTask();
-        return; // 添加return，防止继续执行下面的条件判断
-      }
-      // 检查是否在任务进行中且允许按键
-      else if (keyAllowed && trialActive) {
+      if (keyAllowed && trialActive) {
         const rt = performance.now() - trialBeginTime;
         handleResponse(rt);
         return;
@@ -235,15 +233,8 @@
         touchHandled = false; // 重置标志
         return;
       }
-
-      // 检查是否在初始界面，模拟开始任务的空格键
-      if (instructionsEl.style.display !== "none") {
-        e.preventDefault();
-        startTask();
-        return; // 添加return，防止继续执行下面的条件判断
-      }
       // 检查是否在任务进行中且允许按键
-      else if (keyAllowed && trialActive) {
+      if (keyAllowed && trialActive) {
         const rt = performance.now() - trialBeginTime;
         handleResponse(rt);
         return;
