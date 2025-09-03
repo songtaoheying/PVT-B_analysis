@@ -227,6 +227,10 @@
     });
     // 修改鼠标点击事件处理
     document.addEventListener("click", function (e) {
+      // 如果点击的是开始按钮，不处理为过早反应
+      if (e.target.closest('#startButton')) {
+        return;
+      }
 
       // 如果触摸事件已被处理，则忽略点击事件
       if (touchHandled) {
