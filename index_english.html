@@ -54,23 +54,9 @@
     }
 
     button {
-      font-size: 18px;
-      padding: 12px 24px;
-      margin: 10px;
-      border: 1px solid #ddd;
-      background: #fff;
-      color: #333;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      border-radius: 4px;
-      min-width: 120px;
-    }
-
-    /* 结果页面按钮特殊样式 */
-    .result-buttons button {
-      padding: 12px 25px;
-      margin: 0 10px;
-      min-width: 150px;
+      font-size: 24px;
+      padding: 10px 20px;
+      margin-top: 20px;
     }
 
 
@@ -149,9 +135,11 @@
   <div id="stimulus-frame"></div>
   <div id="screen">
     <div id="instructions">
-      <p>当黄色数字出现时，请尽快按<strong>空格键</strong>、<strong>点击</strong>或<strong>触摸</strong>屏幕。</p>
-      <p>不要在数字出现之前按键。</p>
-      <p>按<strong>空格键</strong>、<strong>点击</strong>或<strong>触摸</strong>开始任务</p>
+      <p>When the yellow numbers appear, press the <strong>SPACE</strong> key, <strong>click</strong> or
+        <strong>tap</strong> the screen as fast as possible.</p>
+      <p>Do not press before the numbers appear.</p>
+      <p>Press <strong>SPACE</strong>, <strong>click</strong> or <strong>tap</strong> to start the task</p>
+
     </div>
     <div id="task" style="display:none;">
       <div id="stimulus-container">
@@ -166,8 +154,8 @@
   </div>
 
   <script>
-    const TOTAL_EXP = 180000; // 3 minutes
-    // const TOTAL_EXP = 5000;
+    // const TOTAL_EXP = 180000; // 3 minutes
+    const TOTAL_EXP = 10000;
     const MIN_RT = 100;       // minimum RT
     const LAPSE_TIME = 500;   // lapse threshold
     let correctRTs = [];
@@ -180,7 +168,6 @@
     let keyAllowed = false;
     let timeoutID = null;
     let trialActive = false;
-    let touchHandled = false;
 
     const timerEl = document.getElementById("timer");
     const feedbackEl = document.getElementById("feedback");
@@ -202,56 +189,40 @@
         handleResponse();
       }
     });
-    // 修改触屏事件处理
+    // 添加触屏支持
     document.addEventListener("touchstart", function (e) {
-      e.preventDefault(); // 添加这行来阻止默认行为
-      e.stopPropagation();    // 阻止事件冒泡
-
-      // 标记触摸事件已被处理
-      touchHandled = true;
+      // 防止默认的滚动等行为
+      e.preventDefault();
 
       // 检查是否在初始界面，模拟开始任务的空格键
       if (instructionsEl.style.display !== "none") {
         startTask();
-        return; // 添加return，防止继续执行下面的条件判断
       }
       // 检查是否在任务进行中且允许按键
       else if (keyAllowed && trialActive) {
         const rt = performance.now() - trialBeginTime;
         handleResponse(rt);
-        return;
       }
       // 检查是否在任务进行中但刺激尚未出现
       else if (!stimulusPresent && trialActive) {
         handleResponse();
-        return;
       }
     });
-    // 修改鼠标点击事件处理
+    // 添加鼠标点击和触屏支持
     document.addEventListener("click", function (e) {
-
-      // 如果触摸事件已被处理，则忽略点击事件
-      if (touchHandled) {
-        touchHandled = false; // 重置标志
-        return;
-      }
-
       // 检查是否在初始界面，模拟开始任务的空格键
       if (instructionsEl.style.display !== "none") {
         e.preventDefault();
         startTask();
-        return; // 添加return，防止继续执行下面的条件判断
       }
       // 检查是否在任务进行中且允许按键
       else if (keyAllowed && trialActive) {
         const rt = performance.now() - trialBeginTime;
         handleResponse(rt);
-        return;
       }
       // 检查是否在任务进行中但刺激尚未出现
       else if (!stimulusPresent && trialActive) {
         handleResponse();
-        return;
       }
     });
 
@@ -408,20 +379,20 @@
 
     function generateResultHTML(result) {
       const displayData = `
-    测试时间: ${result.display.testEndTime}
-    平均反应时间: ${result.display.avgRT} ms
-    总测试次数: ${result.display.nTrials}
-    过慢次数(>500ms): ${result.display.nLapses}
-    过早次数: ${result.display.nCommissions}
+    Test End Time: ${result.display.testEndTime}
+    Average RT: ${result.display.avgRT} ms
+    Total Trials: ${result.display.nTrials}
+    Lapses (>500ms): ${result.display.nLapses}
+    Commissions (too early): ${result.display.nCommissions}
   `;
 
       return `
 <div class="result-container">
-  <h2 class="result-title">任务完成</h2>
+  <h2 class="result-title">Task Completed</h2>
   <pre id="resultData">${displayData}</pre>
   <div class="result-buttons">
-    <button onclick="copyDataAsCSV()">复制数据</button>
-    <button onclick="location.reload()">重新开始</button>
+    <button onclick="copyDataAsCSV()">Copy Data</button>
+    <button onclick="location.reload()">Restart</button>
   </div>
   <div id="csvData" style="display:none">${result.header}\n${result.data}</div>
 </div>

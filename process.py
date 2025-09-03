@@ -13,14 +13,18 @@ df['id'] = range(1, len(df) + 1)
 # 4. 提取 Average RT (ms)
 df['Average RT (ms)'] = df['Average RT (ms)']  # 直接保留
 
-# 5. 安全计算 OPS：防止 Total Trials 为 0
+# 5. 新增列: 1/RT (注意处理 RT 为 0 的情况)
+# 使用 .loc 避免除零错误
+df['Mean 1/RT'] = df['Average RT (ms)'].apply(lambda rt: 1 / ( rt/1000 ) if rt > 0 else 0)
+
+# 6. 安全计算 OPS：防止 Total Trials 为 0
 df['OPS'] = df.apply(
     lambda row: 1 - (row['Lapses (>500ms)'] + row['Commissions (too early)']) / row['Total Trials']
     if row['Total Trials'] > 0 else 0,
     axis=1
 )
 
-# 6. 计算 Standardized OPS
+# 7. 计算 Standardized OPS
 ops_mean = df['OPS'].mean()
 ops_std = df['OPS'].std()
 
@@ -29,10 +33,10 @@ if ops_std == 0:
 else:
     df['Standardized OPS'] = (df['OPS'] - ops_mean) / ops_std
 
-# 7. 选择需要的列输出
-result = df[['id', 'Test End Time', 'Average RT (ms)', 'OPS', 'Standardized OPS']]
+# 8. 选择需要的列输出（加入 '1/RT'）
+result = df[['id', 'Test End Time', 'Average RT (ms)', 'Mean 1/RT', 'OPS', 'Standardized OPS']]
 
-# 8. 保存为 result.csv，保留合适的浮点精度
+# 9. 保存为 result.csv，保留合适的浮点精度
 result.to_csv('result.csv', index=False, float_format='%.6f')
 
 print("✅ 数据处理完成，已保存为 result.csv")

@@ -310,11 +310,11 @@
             const elapsed = performance.now() - trialBeginTime;
             timerEl.textContent = Math.floor(elapsed); // 或 Math.round
 
-            if (elapsed < 1000) {
-                setTimeout(updateTimer, 1); // 尝试每 1ms 更新（实际最小约 1–2ms）
+            if (elapsed < 30000) {
+                // setTimeout(updateTimer, 10); // 尝试每 10ms 更新
             } else {
                 trialTimeOut();
-                timerEl.textContent = "1000"; // 显示1000
+                timerEl.textContent = "30000"; // 显示1000
                 setTimeout(runTrial, 1000);
             }
         }
