@@ -37,7 +37,7 @@ PVT-B 是一种测量**持续注意力和警觉性**的标准化测试，用于�
 
 ---
 
-## 📊 数据分析核心指标：OPS
+## 数据分析核心指标：OPS
 
 > **反应时间 (RT)** 也是一个重要参数，综合 OPS 与 RT 能更全面地评估认知状态。
 
@@ -62,17 +62,19 @@ $$
 ## 如何本地体验测试
 
 - 下载文件：
-在本项目的 GitHub 页面，点击绿色的 Code 按钮，选择 Download ZIP。
-下载完成后，解压缩文件夹。
+在本项目的 GitHub 页面，找到右边Releases,下载zip文件
 - 找到主文件：
-打开解压后的文件夹，找到名为 index.html 的文件。
+打开解压后的文件夹，找到名为 PVT-B.html 的文件。
 - 直接运行：
-双击 index.html 文件。
+双击 PVT-B.html 文件。
 它会自动在您的默认浏览器（如 Chrome, Edge, Safari）中打开。
 无需安装任何软件，无需联网，即可开始测试！
 ## 如何本地分析数据
-打开python环境,将多次测试的数据复制到raw_data.csv中,运行脚本clean_data.py,再运行process_.py,生成result.csv,通过excel可视化展现
-
+测试完成后复制数据
+双击打开文件夹中的Analyzer.exe
+将数据复制,回车两次,等待程序运行结束
+双击打开Show.html,选择本文件夹data目录下result.csv文件
+点击加载并绘制图表即可
 
 
 ---
@@ -87,7 +89,7 @@ $$
 
 ---
 
-## 📚 参考文献
+## 参考文献
 
 *   **Tu, D. et al. (2022)**. Dynamic ensemble prediction of cognitive performance in spaceflight. *Scientific Reports*.
 *   Basner, M. et al. (2011). Validity and sensitivity of a brief Psychomotor Vigilance Test (PVT-B). *Acta Astronautica*.
