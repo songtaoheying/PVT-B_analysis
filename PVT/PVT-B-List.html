@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <title>PVT-B Results List</title>
+  <style>
+    /* 统一深色背景 */
+    body {
+      background-color: #121212;
+      /* 使用深灰色作为背景 */
+      color: #e0e0e0;
+      /* 使用浅灰色作为主要文本颜色 */
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      color: #8aff8a;
+      /* 调整为更亮的绿色 */
+    }
+
+    .controls {
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* 按钮样式：适应深色背景 */
+    button {
+      font-size: 18px;
+      padding: 10px 20px;
+      margin: 5px;
+      border: 1px solid #555;
+      /* 边框调整为深色 */
+      background: #333;
+      /* 按钮背景调整为深色 */
+      color: #e0e0e0;
+      /* 文本颜色调整为浅色 */
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      background: #444;
+      /* 悬停颜色 */
+    }
+
+    /* 特殊颜色按钮 */
+    .action-buttons button {
+      min-width: 120px;
+    }
+
+    /* 返回任务页按钮 */
+    .controls>div:first-child button:first-child {
+      background-color: #333;
+      color: #e0e0e0;
+      border-color: #555;
+    }
+
+    /* 展示数据趋势按钮 */
+    .controls>div:first-child button:nth-child(2) {
+      background-color: #0d47a1;
+      /* 深蓝色 */
+      color: white;
+      border-color: #1565c0;
+    }
+
+    /* 清空按钮 */
+    .action-buttons button:last-child {
+      background-color: #b71c1c;
+      /* 深红色 */
+      color: white;
+      border-color: #c62828;
+    }
+
+
+    /* 表格样式 */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: #222;
+      /* 表格背景 */
+    }
+
+    th,
+    td {
+      border: 1px solid #444;
+      /* 边框调整为深色 */
+      padding: 10px;
+      text-align: center;
+      font-size: 14px;
+      /* 缩小字体以容纳更多列 */
+    }
+
+    th {
+      background-color: #1b5e20;
+      /* 深绿色表头 */
+      color: white;
+    }
+
+    tr:nth-child(even) {
+      background-color: #2a2a2a;
+      /* 偶数行背景 */
+    }
+
+    .import-section {
+      border: 1px solid #444;
+      /* 边框调整为深色 */
+      padding: 15px;
+      margin-top: 20px;
+      text-align: left;
+      background-color: #222;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>PVT-B 任务结果列表</h1>
+
+    <div class="controls">
+      <div>
+        <button onclick="window.location.href='PVT-B.html'">返回任务页</button>
+        <button onclick="window.location.href='PVT-B-Show.html'">展示数据趋势</button>
+      </div>
+      <div class="action-buttons">
+        <button onclick="exportDataAsCSV()">导出数据 (CSV)</button>
+        <button onclick="document.getElementById('file-input').click()">导入数据 (CSV)</button>
+        <button onclick="clearAllData()">清空所有数据</button>
+      </div>
+    </div>
+    <div class="import-section">
+      <p>导入说明: 请选择CSV文件，数据将追加到现有列表中。CSV文件应包含以下列: **Test End Time,Average RT (ms),Total Trials,Lapses
+        (>500ms),Commissions (too early),Mean 1/RT,OPS**</p>
+      <input type="file" id="file-input" accept=".csv" class="hidden" onchange="importData(event)">
+    </div>
+
+
+    <table id="results-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>测试时间</th>
+          <th>平均反应时间 (ms)</th>
+          <th>总测试次数</th>
+          <th>过慢次数(&gt;500ms)</th>
+          <th>过早次数</th>
+          <th>Mean 1/RT</th>
+          <th>OPS</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const DATA_STORAGE_KEY = 'PVT_B_Results';
+    const TABLE_BODY = document.querySelector('#results-table tbody');
+
+    // 1. 数据加载与展示
+    function loadAndDisplayData() {
+      TABLE_BODY.innerHTML = ''; // 清空现有内容
+
+      const existingData = localStorage.getItem(DATA_STORAGE_KEY);
+      let results = [];
+      if (existingData) {
+        try {
+          results = JSON.parse(existingData);
+        } catch (e) {
+          console.error("Error parsing stored data:", e);
+          return;
+        }
+      }
+
+      if (results.length === 0) {
+        TABLE_BODY.innerHTML = '<tr><td colspan="8">暂无数据记录</td></tr>';
+        return;
+      }
+
+      // 应该改为直接使用标准ISO格式解析（假设输入已经是正确格式）
+      results.sort((a, b) => {
+        // 直接使用标准ISO格式日期字符串进行比较
+        const timeA = new Date(a.testEndTime);
+        const timeB = new Date(b.testEndTime);
+        return timeB - timeA;
+      });
+
+      results.forEach((record, index) => {
+        const row = TABLE_BODY.insertRow();
+
+        row.innerHTML = `
+        <td>${index + 1}</td>
+        <td>${formatDateTime(record.testEndTime)}</td>
+        <td>${parseFloat(record.avgRT || 0).toFixed(6)}</td>
+        <td>${record.nTrials || 0}</td>
+        <td>${record.nLapses || 0}</td>
+        <td>${record.nCommissions || 0}</td>
+        <td>${parseFloat(record.meanReciprocalRT || 0).toFixed(6)}</td>
+        <td>${parseFloat(record.ops || 0).toFixed(6)}</td>
+      `;
+      });
+    }
+
+    // 2. 数据导出为 CSV
+    function exportDataAsCSV() {
+      const existingData = localStorage.getItem(DATA_STORAGE_KEY);
+      let results = [];
+      if (existingData) {
+        try {
+          results = JSON.parse(existingData);
+        } catch (e) {
+          alert("数据解析错误，无法导出。");
+          return;
+        }
+      }
+
+      if (results.length === 0) {
+        alert("没有数据可供导出。");
+        return;
+      }
+
+      // 调整为新的头部格式
+      const header = "id,Test End Time,Average RT (ms),Total Trials,Lapses (>500ms),Commissions (too early),Mean 1/RT,OPS\n";
+      let csv = header;
+
+      results.forEach((record, index) => {
+        // 确保字段顺序和头部一致
+        csv += `${index + 1},${formatDateTime(record.testEndTime)},${parseFloat(record.avgRT).toFixed(6)},${record.nTrials || 0},${record.nLapses || 0},${record.nCommissions || 0},${parseFloat(record.meanReciprocalRT).toFixed(6)},${parseFloat(record.ops).toFixed(6)}\n`;
+      });
+
+      const blob = new Blob([csv], {
+        type: 'text/csv;charset=utf-8;'
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `PVT-B_Results_${new Date().toISOString().slice(0, 10)}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // 3. 数据导入（从 CSV）
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const csvText = e.target.result;
+        processCSV(csvText);
+      };
+      reader.readAsText(file);
+    }
+
+    function processCSV(csvText) {
+      const lines = csvText.trim().split('\n');
+      if (lines.length < 2) {
+        alert("CSV文件内容为空或格式不正确。");
+        return;
+      }
+
+      const headerLine = lines[0].split(',').map(h => h.trim());
+      // 定义我们期望从 CSV 中导入的核心字段 (增加了原始指标)
+      const expectedHeaders = ["Test End Time", "Average RT (ms)", "Total Trials", "Lapses (>500ms)", "Commissions (too early)", "Mean 1/RT", "OPS"];
+
+      const headerIndices = {};
+      let allHeadersFound = true;
+
+      // 1. 建立期望字段在 CSV 头部中的索引映射
+      expectedHeaders.forEach(expectedHeader => {
+        const index = headerLine.indexOf(expectedHeader);
+        if (index === -1) {
+          allHeadersFound = false; // 任何一个必需字段找不到，则标记为错误
+        }
+        headerIndices[expectedHeader] = index;
+      });
+
+      if (!allHeadersFound) {
+        alert("CSV文件头部格式不正确，缺少必需的列：" + expectedHeaders.join(', '));
+        return;
+      }
+
+      const newRecords = [];
+      const rtKey = "Average RT (ms)";
+      const reciprocalRTKey = "Mean 1/RT";
+      const totalTrialsKey = "Total Trials";
+      const lapsesKey = "Lapses (>500ms)";
+      const commissionsKey = "Commissions (too early)";
+
+      // 2. 遍历数据行并使用索引精确提取数据
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim());
+
+        // 确保数据行足够长，能够覆盖所有必需的字段索引
+        const maxIndex = Math.max(...Object.values(headerIndices));
+        if (values.length <= maxIndex) {
+          continue; // 跳过数据不完整的行
+        }
+
+        // 仅提取所需字段并转换类型
+        newRecords.push({
+          id: Date.now() + Math.random().toString(36).substring(2, 9) + i, // 生成唯一ID
+          testEndTime: values[headerIndices["Test End Time"]],
+          avgRT: parseFloat(values[headerIndices[rtKey]]),
+          nTrials: parseInt(values[headerIndices[totalTrialsKey]]) || 0,
+          nLapses: parseInt(values[headerIndices[lapsesKey]]) || 0,
+          nCommissions: parseInt(values[headerIndices[commissionsKey]]) || 0,
+          meanReciprocalRT: parseFloat(values[headerIndices[reciprocalRTKey]]),
+          ops: parseFloat(values[headerIndices.OPS]),
+        });
+      }
+
+      if (newRecords.length > 0) {
+        const existingData = localStorage.getItem(DATA_STORAGE_KEY);
+        let currentResults = [];
+        if (existingData) {
+          try {
+            currentResults = JSON.parse(existingData);
+          } catch (e) {
+            console.error("Error parsing stored data for import:", e);
+          }
+        }
+
+        // 追加数据
+        const updatedResults = currentResults.concat(newRecords);
+        localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(updatedResults));
+        alert(`成功导入 ${newRecords.length} 条数据。`);
+        loadAndDisplayData(); // 重新加载并展示
+      } else {
+        alert("未找到有效数据进行导入。");
+      }
+    }
+    // 4. 清空数据功能
+    function clearAllData() {
+      if (confirm("警告：您确定要永久清除所有 PVT-B 任务数据吗？")) {
+        localStorage.removeItem(DATA_STORAGE_KEY);
+        alert("所有数据已清除。");
+        loadAndDisplayData();
+      }
+    }
+
+    // 在<script>标签内的合适位置添加这个函数
+    function formatDateTime(isoString) {
+      if (!isoString) return 'N/A';
+
+      const date = new Date(isoString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    }
+
+    // 页面加载时执行
+    document.addEventListener('DOMContentLoaded', loadAndDisplayData);
+  </script>
+</body>
+
+</html>

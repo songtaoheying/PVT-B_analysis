@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Mean 1/RT 与 OPS 可视化</title>
+    <script src="./chart.umd.js"></script>
+    <style>
+        /* 新增：统一深色背景和文本颜色 */
+        body {
+            background-color: #121212;
+            /* 深色背景 */
+            color: #e0e0e0;
+            /* 浅色文本 */
+            font-family: Arial, sans-serif;
+        }
+
+        .chart-container {
+            width: 100%;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #e0e0e0;
+        }
+
+        /* 控制容器：适应深色背景 */
+        .data-control-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #333;
+            /* 深色边框 */
+            border-radius: 5px;
+            text-align: center;
+            background-color: #1e1e1e;
+            /* 稍亮的深色背景 */
+        }
+
+        /* 按钮：适应深色背景 */
+        button {
+            background-color: #1b5e20;
+            /* 深绿色按钮 */
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 15px;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background-color: #2e7d32;
+        }
+
+        /* 日期筛选器：适应深色背景 */
+        .date-filter-container {
+            margin: 20px auto;
+            padding: 15px;
+            border: 1px solid #333;
+            /* 深色边框 */
+            border-radius: 5px;
+            text-align: center;
+            max-width: 800px;
+            background-color: #1e1e1e;
+        }
+
+        /* 输入框：适应深色背景 */
+        .date-filter-container input[type="date"] {
+            margin: 0 10px;
+            padding: 5px;
+            background-color: #333;
+            /* 输入框背景 */
+            color: #e0e0e0;
+            /* 输入框文本 */
+            border: 1px solid #555;
+            border-radius: 3px;
+        }
+
+        /* 标题颜色 */
+        .date-filter-container h3,
+        .hour-filter-container h4 {
+            color: #90caf9;
+            /* 浅蓝色标题 */
+        }
+
+        .date-filter-container button {
+            margin: 10px 5px;
+            padding: 8px 15px;
+        }
+
+        .hour-filter-container {
+            margin: 15px 0;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 5px;
+            background-color: #222;
+        }
+
+        .hour-checkboxes {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .hour-checkboxes label {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 14px;
+        }
+
+        /* 状态文本颜色调整 */
+        #data-status {
+            color: #ffcc80 !important;
+            /* 警告/状态颜色，黄色系 */
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Mean 1/RT 与 OPS 随时间变化趋势</h2>
+
+    <div class="data-control-container">
+        <button onclick="window.location.href='PVT-B-List.html'">返回列表页</button>
+        <p id="data-status" style="margin-top: 10px;">正在加载数据...</p>
+    </div>
+
+    <div class="date-filter-container" id="date-filter-container" style="display: none;">
+        <h3>日期和时间筛选</h3>
+        <label>开始日期: <input type="date" id="start-date"></label>
+        <label>结束日期: <input type="date" id="end-date"></label>
+
+        <div class="hour-filter-container">
+            <h4>小时筛选</h4>
+            <div>
+                <input type="checkbox" id="select-all-hours" checked>
+                <label for="select-all-hours">全选/全不选</label>
+                <button id="invert-hours">反选</button>
+            </div>
+            <div class="hour-checkboxes" id="hour-checkboxes">
+            </div>
+        </div>
+
+        <div>
+            <button onclick="applyDateFilter()">应用筛选</button>
+            <button onclick="resetDateFilter()">重置筛选</button>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="myChart"></canvas>
+    </div>
+
+    <script>
+        const DATA_STORAGE_KEY = 'PVT_B_Results';
+        // 获取DOM元素
+        const dateFilterContainer = document.getElementById('date-filter-container');
+        const startDateInput = document.getElementById('start-date');
+        const endDateInput = document.getElementById('end-date');
+        const selectAllHours = document.getElementById('select-all-hours');
+        const invertHoursBtn = document.getElementById('invert-hours');
+        const hourCheckboxes = document.getElementById('hour-checkboxes');
+        const dataStatus = document.getElementById('data-status');
+        let originalData = []; // 保存原始数据
+
+        // --- 小时筛选控制逻辑 ---
+
+        // 全选/全不选功能
+        selectAllHours.addEventListener('change', function () {
+            const checkboxes = hourCheckboxes.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllHours.checked;
+            });
+        });
+
+        // 反选功能
+        invertHoursBtn.addEventListener('click', function () {
+            const checkboxes = hourCheckboxes.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = !checkbox.checked;
+            });
+            updateSelectAllState();
+        });
+
+        // 创建小时筛选复选框
+        function createHourCheckboxes() {
+            // 清空现有内容
+            hourCheckboxes.innerHTML = '';
+
+            // 创建0-23小时的复选框
+            for (let hour = 0; hour < 24; hour++) {
+                const container = document.createElement('div');
+                const checkbox = document.createElement('input');
+                const label = document.createElement('label');
+
+                checkbox.type = 'checkbox';
+                checkbox.id = `hour-${hour}`;
+                checkbox.value = hour;
+                checkbox.checked = true;
+
+                label.htmlFor = `hour-${hour}`;
+                label.textContent = `${hour}时`;
+
+                container.appendChild(checkbox);
+                container.appendChild(label);
+                hourCheckboxes.appendChild(container);
+
+                // 添加事件监听器更新全选状态
+                checkbox.addEventListener('change', updateSelectAllState);
+            }
+        }
+
+        // 更新全选状态
+        function updateSelectAllState() {
+            const checkboxes = hourCheckboxes.querySelectorAll('input[type="checkbox"]');
+            const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+            const totalCount = checkboxes.length;
+
+            if (checkedCount === totalCount) {
+                selectAllHours.checked = true;
+                selectAllHours.indeterminate = false;
+            } else if (checkedCount === 0) {
+                selectAllHours.checked = false;
+                selectAllHours.indeterminate = false;
+            } else {
+                selectAllHours.checked = false;
+                selectAllHours.indeterminate = true;
+            }
+        }
+
+        // --- 数据处理和加载 ---
+
+        // 格式化时间为"几月几日 几点"
+        function formatTime(dateTimeStr) {
+            const date = new Date(dateTimeStr.replace(' ', 'T'));
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const hour = date.getHours();
+            return `${month}月${day}日 ${hour}时`;
+        }
+
+        // 获取日期部分（年-月-日）
+        function getDatePart(dateTimeStr) {
+            const date = new Date(dateTimeStr.replace(' ', 'T'));
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // 从LocalStorage加载数据
+        function loadDataFromStorage() {
+            const existingData = localStorage.getItem(DATA_STORAGE_KEY);
+            let results = [];
+            if (existingData) {
+                try {
+                    results = JSON.parse(existingData);
+                } catch (e) {
+                    console.error("Error parsing stored data:", e);
+                    return [];
+                }
+            }
+
+            // 过滤和转换数据结构以匹配绘图需求
+            const processedData = results.map(record => ({
+                time: record.testEndTime, // Test End Time
+                mean1rt: parseFloat(record.meanReciprocalRT), // Mean 1/RT
+                ops: parseFloat(record.ops) // OPS
+            })).filter(d => d.time && !isNaN(d.mean1rt) && !isNaN(d.ops)); // 过滤掉无效数据
+
+            // 按时间升序排列
+            processedData.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+            return processedData;
+        }
+
+
+        // 绘制图表
+        function drawChart(data) {
+            // 处理数据
+            const labels = data.map(d => formatTime(d.time));
+            const mean1rtData = data.map(d => d.mean1rt);
+            const opsData = data.map(d => d.ops);
+
+            // 插件：用于绘制交替的日期背景
+            const backgroundColorPlugin = {
+                id: 'backgroundColorPlugin',
+                beforeDraw: (chart) => {
+                    const ctx = chart.ctx;
+                    const xAxis = chart.scales.x;
+                    const yAxis = chart.scales.y;
+
+                    ctx.save();
+
+                    // 基于当前图表数据获取日期分组
+                    const dateGroups = {};
+                    const currentChartLabels = chart.data.labels;
+
+                    // 从图表标签中提取日期分组信息
+                    currentChartLabels.forEach((label, index) => {
+                        // 从标签中提取日期部分，假设标签格式为 "月日 时"
+                        const dateMatch = label.match(/(\d+)月(\d+)日/);
+                        if (dateMatch) {
+                            const dateKey = `${dateMatch[1]}-${dateMatch[2]}`;
+                            if (!dateGroups[dateKey]) {
+                                dateGroups[dateKey] = [];
+                            }
+                            dateGroups[dateKey].push(index);
+                        }
+                    });
+
+                    // 转换为连续段落
+                    const dateSegments = [];
+                    Object.entries(dateGroups).forEach(([date, indices], groupIndex) => {
+                        if (indices.length > 0) {
+                            // 查找连续区间
+                            let startIdx = indices[0];
+                            let endIdx = indices[0];
+
+                            for (let i = 1; i < indices.length; i++) {
+                                if (indices[i] === endIdx + 1) {
+                                    endIdx = indices[i];
+                                } else {
+                                    // 保存当前段
+                                    dateSegments.push({
+                                        date: date,
+                                        startIndex: startIdx,
+                                        endIndex: endIdx,
+                                        groupIndex: groupIndex
+                                    });
+                                    startIdx = indices[i];
+                                    endIdx = indices[i];
+                                }
+                            }
+
+                            // 保存最后一段
+                            dateSegments.push({
+                                date: date,
+                                startIndex: startIdx,
+                                endIndex: endIdx,
+                                groupIndex: groupIndex
+                            });
+                        }
+                    });
+
+                    // 绘制交替背景
+                    dateSegments.forEach((segment) => {
+                        const startPixel = xAxis.getPixelForValue(segment.startIndex);
+                        const endPixel = xAxis.getPixelForValue(segment.endIndex);
+
+                        // 计算条目宽度（假设至少有两个点）
+                        const barWidth = data.length > 1 ? Math.abs(xAxis.getPixelForValue(1) - xAxis.getPixelForValue(0)) : 20;
+
+                        // 使用日期分组的索引来决定颜色
+                        const color = segment.groupIndex % 2 === 0 ?
+                            'rgba(60, 60, 60, 0.5)' : /* 更深的灰色 */
+                            'rgba(40, 40, 40, 0.5)';
+
+                        ctx.fillStyle = color;
+                        ctx.fillRect(
+                            Math.min(startPixel, endPixel) - barWidth / 2,
+                            yAxis.top,
+                            Math.abs(endPixel - startPixel) + barWidth,
+                            yAxis.height
+                        );
+                    });
+
+                    ctx.restore();
+                }
+            };
+
+
+            // 如果已有图表，先销毁
+            const chartElement = Chart.getChart('myChart');
+            if (chartElement) {
+                chartElement.destroy();
+            }
+
+            // 注册插件
+            Chart.register(backgroundColorPlugin);
+
+            // 绘制图表
+            const ctx = document.getElementById('myChart').getContext('2d');
+            const myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Mean 1/RT',
+                            data: mean1rtData,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            yAxisID: 'y',
+                            tension: 0.3,
+                            pointRadius: 3, /* 调整点大小 */
+                            pointHoverRadius: 8
+                        },
+                        {
+                            label: 'OPS',
+                            data: opsData,
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            yAxisID: 'y1',
+                            tension: 0.3,
+                            pointRadius: 3, /* 调整点大小 */
+                            pointHoverRadius: 8
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    stacked: false,
+                    // !!! Chart.js 深色模式配置
+                    color: '#e0e0e0', /* 所有文本颜色 */
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Mean 1/RT',
+                                color: '#e0e0e0' /* 轴标题颜色 */
+                            },
+                            ticks: {
+                                color: '#e0e0e0' /* 刻度标签颜色 */
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)' /* 网格线颜色 */
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'OPS',
+                                color: '#e0e0e0' /* 轴标题颜色 */
+                            },
+                            ticks: {
+                                color: '#e0e0e0' /* 刻度标签颜色 */
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '时间',
+                                color: '#e0e0e0' /* 轴标题颜色 */
+                            },
+                            ticks: {
+                                color: '#e0e0e0' /* 刻度标签颜色 */
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e0e0e0' /* 图例标签颜色 */
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y.toFixed(6);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 从LocalStorage加载并绘制图表
+        function loadAndDrawChartFromStorage() {
+            originalData = loadDataFromStorage();
+
+            if (originalData.length === 0) {
+                dataStatus.textContent = 'LocalStorage中没有找到有效数据记录。';
+                dataStatus.style.color = '#ff6b6b'; /* 错误颜色 */
+                dateFilterContainer.style.display = 'none';
+                return;
+            }
+
+            dataStatus.textContent = `已加载 ${originalData.length} 条数据。`;
+            dataStatus.style.color = '#8aff8a'; /* 成功颜色 */
+
+            // 设置日期筛选器的默认值
+            setupDateFilter(originalData);
+
+            // 创建小时筛选复选框
+            createHourCheckboxes();
+
+            // 显示日期筛选器
+            dateFilterContainer.style.display = 'block';
+
+            // 绘制完整数据图表
+            drawChart(originalData);
+        }
+
+        // --- 筛选功能 ---
+
+        // 设置日期筛选器
+        function setupDateFilter(data) {
+            // 获取数据中的最早和最晚日期
+            const dates = data.map(item => new Date(item.time.replace(' ', 'T')));
+            const minDate = new Date(Math.min.apply(null, dates));
+            const maxDate = new Date(Math.max.apply(null, dates));
+
+            // 格式化为 YYYY-MM-DD
+            const formatDate = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+
+            // 设置日期输入框的范围和默认值
+            const minDateStr = formatDate(minDate);
+            const maxDateStr = formatDate(maxDate);
+
+            startDateInput.min = minDateStr;
+            startDateInput.max = maxDateStr;
+            startDateInput.value = minDateStr;
+
+            endDateInput.min = minDateStr;
+            endDateInput.max = maxDateStr;
+            endDateInput.value = maxDateStr;
+        }
+
+        // 应用日期筛选
+        function applyDateFilter() {
+            if (!originalData.length) return;
+
+            const startDate = new Date(startDateInput.value);
+            const endDate = new Date(endDateInput.value);
+
+            // 设置结束日期为当天的最后一刻，确保包含选择日期的所有数据
+            endDate.setHours(23, 59, 59, 999);
+
+            // 获取选中的小时
+            const selectedHours = [];
+            const hourInputs = hourCheckboxes.querySelectorAll('input[type="checkbox"]');
+            hourInputs.forEach(input => {
+                if (input.checked) {
+                    selectedHours.push(parseInt(input.value));
+                }
+            });
+
+            // 筛选数据
+            const filteredData = originalData.filter(item => {
+                const itemDate = new Date(item.time.replace(' ', 'T'));
+                const itemHour = itemDate.getHours();
+
+                // 检查日期是否在范围内
+                const dateInRange = itemDate >= startDate && itemDate <= endDate;
+
+                // 检查小时是否被选中
+                const hourSelected = selectedHours.includes(itemHour);
+
+                return dateInRange && hourSelected;
+            });
+
+            if (filteredData.length === 0) {
+                alert('在选定的日期和小时范围内没有数据');
+                return;
+            }
+
+            // 绘制筛选后的图表
+            drawChart(filteredData);
+        }
+
+        // 重置日期筛选
+        function resetDateFilter() {
+            if (!originalData.length) return;
+
+            // 重置日期输入框为默认值
+            setupDateFilter(originalData);
+
+            // 重置小时选择为全选
+            const checkboxes = hourCheckboxes.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            selectAllHours.checked = true;
+            selectAllHours.indeterminate = false;
+
+            // 重新绘制完整数据图表
+            drawChart(originalData);
+        }
+
+        // 页面加载时执行
+        document.addEventListener('DOMContentLoaded', loadAndDrawChartFromStorage);
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                // 注册 sw.js 文件
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('Service Worker 注册成功:', registration);
+                    })
+                    .catch(error => {
+                        console.error('Service Worker 注册失败:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+
+</html>
