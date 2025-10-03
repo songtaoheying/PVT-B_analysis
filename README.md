@@ -79,7 +79,7 @@ $$
 ## 灵感来源
 
 
-本项目设计灵感来源于 [PsyToolkit ](https://www.psytoolkit.org/experiment-library/pvtb.html)的 PVT-B 演示，并结合 NASA 航天员研究进行优化。
+本项目设计灵感来源于 [PsyToolkit ](https://www.psytoolkit.org/experiment-library/pvtb.html)的 PVT-B 演示
 为了方便本地运行和数据分析,开发为html单文件测试
 所有代码均为原创
 
