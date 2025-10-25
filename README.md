@@ -33,13 +33,11 @@ PVT-B 是一种测量**持续注意力和警觉性**的标准化测试，用于�
 | **Lapses (>500ms)** | 反应过慢 (>500ms) 的次数，反映注意力涣散 |
 | **Commissions (too early)** | 抢答 (<100ms) 的次数，反映冲动性 |
 
-点击“Copy Data”按钮，可将以上数据复制为 CSV 格式，方便粘贴到 Excel、SPSS 或 Python 中进行进一步分析。
 
 ---
 
-## 数据分析核心指标：OPS
-
-> **反应时间 (RT)** 也是一个重要参数，综合 OPS 与 RT 能更全面地评估认知状态。
+## 数据分析核心指标：OPS 反应时间 (RT)**  
+综合 OPS 与 RT 能更全面地评估认知状态。
 
 本项目的核心指标是 **OPS (Overall Performance Score, 整体表现得分)**。
 
@@ -80,7 +78,7 @@ $$
 
 
 本项目设计灵感来源于 [PsyToolkit ](https://www.psytoolkit.org/experiment-library/pvtb.html)的 PVT-B 演示
-为了方便本地运行和数据分析,开发为html单文件测试
+为了方便本地运行和数据分析,开发为html测试及数据分析网页
 所有代码均为原创
 
 
